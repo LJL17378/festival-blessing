@@ -20,6 +20,15 @@ func main() {
 		authGroup.PUT("/profile", func(c *gin.Context) { updateProfileHandler(c, db) })
 		authGroup.GET("/profile", func(c *gin.Context) { getProfileHandler(c, db) })
 		authGroup.DELETE("/account", func(c *gin.Context) { deleteAccountHandler(c, db) })
+		authGroup.POST("/posts", func(c *gin.Context) { createPostHandler(c, db) })
+		authGroup.GET("/posts", func(c *gin.Context) { getPostsHandler(c, db) })
+		authGroup.POST("/posts/:id/like", func(c *gin.Context) { likePostHandler(c, db) })
+		authGroup.POST("/posts/:id/unlike", func(c *gin.Context) { unlikePostHandler(c, db) })
+		authGroup.GET("/posts/liked", func(c *gin.Context) { getLikedPostsHandler(c, db) }) // 查询某人已点赞的帖子
+		authGroup.POST("/posts/:id/comments", func(c *gin.Context) { createCommentHandler(c, db) })
+		authGroup.GET("/posts/:id/comments", func(c *gin.Context) { getCommentsHandler(c, db) })
+		authGroup.POST("/comments/:id/like", func(c *gin.Context) { likeCommentHandler(c, db) })     // 点赞评论
+		authGroup.POST("/comments/:id/unlike", func(c *gin.Context) { unlikeCommentHandler(c, db) }) // 取消点赞评
 	}
 	r.Run(":8080")
 }
