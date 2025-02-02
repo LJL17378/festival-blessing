@@ -29,6 +29,9 @@ func main() {
 		authGroup.GET("/posts/:id/comments", func(c *gin.Context) { getCommentsHandler(c, db) })
 		authGroup.POST("/comments/:id/like", func(c *gin.Context) { likeCommentHandler(c, db) })     // 点赞评论
 		authGroup.POST("/comments/:id/unlike", func(c *gin.Context) { unlikeCommentHandler(c, db) }) // 取消点赞评
+		authGroup.POST("/friend/request", func(c *gin.Context) { SendFriendRequest(c, db) })
+		authGroup.POST("/friend/accept", AcceptFriendRequest)
+		authGroup.POST("/friend/delete", DeleteFriendRequest)
 	}
 	r.Run(":8080")
 }
