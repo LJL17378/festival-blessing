@@ -33,6 +33,8 @@ func main() {
 		authGroup.POST("/friend/request", func(c *gin.Context) { SendFriendRequest(c, db) })
 		authGroup.POST("/friend/accept", AcceptFriendRequest)
 		authGroup.POST("/friend/delete", DeleteFriendRequest)
+		authGroup.GET("/friend/list", GetAllFriends)
+		authGroup.GET("/friend/getrequests", GetAllReceivedFriendRequests)
 		authGroup.POST("/avatar/upload", func(c *gin.Context) { UploadAvatar(c, db) })
 	}
 	r.Run(":8080")
