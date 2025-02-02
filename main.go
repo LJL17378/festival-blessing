@@ -8,6 +8,7 @@ func main() {
 	db := InitDb()
 
 	r := gin.Default()
+	r.Static("/avatar", "./avatar")
 
 	// 公共路由
 	r.POST("/register", func(c *gin.Context) { registerHandler(c, db) })
@@ -32,6 +33,7 @@ func main() {
 		authGroup.POST("/friend/request", func(c *gin.Context) { SendFriendRequest(c, db) })
 		authGroup.POST("/friend/accept", AcceptFriendRequest)
 		authGroup.POST("/friend/delete", DeleteFriendRequest)
+		authGroup.POST("/avatar/upload", func(c *gin.Context) { UploadAvatar(c, db) })
 	}
 	r.Run(":8080")
 }
