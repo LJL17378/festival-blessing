@@ -76,3 +76,55 @@ func DeleteFriendRequest(c *gin.Context) {
 	db.Where("(user_id = ? and friend_id = ?) OR (friend_id = ? and user_id = ?)", userID, request.FriendID, userID, request.FriendID).Delete(&FriendRelationship{})
 	c.JSON(http.StatusOK, gin.H{"message": "好友已删除"})
 }
+
+// 查询好友
+func GetAllFriends(c *gin.Context) {
+	userID := c.GetInt("userID")
+
+	var friends []FriendRelationship
+	err := db.Where("user_id = ?", userID).Find(&friends).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve friends"})
+		return
+	}
+
+	// 返回好友的用户id
+	var friendList []int
+	for _, f := range friends {
+		if f.UserID != userID {
+			friendList = append(friendList, f.UserID)
+		} else {
+			friendList = append(friendList, f.FriendID)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"friends": friendList})
+}
+
+func GetAllReceivedFriendRequests(c *gin.Context) {
+	userID := c.GetInt("userID")
+
+	// 查询当前用户收到的所有好友请求，且未接受的
+	var requests []FriendRequest
+	err := db.Where("to_id = ? AND accepted_status = ?", userID, false).Find(&requests).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve friend requests"})
+		return
+	}
+
+	// 组合好友请求信息
+	var requestList []gin.H
+	for _, req := range requests {
+		var user User
+		if err := db.First(&user, req.FromID).Error; err != nil {
+			continue // 如果找不到用户，则跳过
+		}
+		requestList = append(requestList, gin.H{
+			"request_id": req.ID,
+			"user_id":    user.ID,
+			"username":   user.UserName,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"requests": requestList})
+}
