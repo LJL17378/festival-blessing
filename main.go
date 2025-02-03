@@ -36,6 +36,9 @@ func main() {
 		authGroup.GET("/friend/list", GetAllFriends)
 		authGroup.GET("/friend/getrequests", GetAllReceivedFriendRequests)
 		authGroup.POST("/avatar/upload", func(c *gin.Context) { UploadAvatar(c, db) })
+		authGroup.POST("/blessings", SendBlessings)                // 发送祝福
+		authGroup.GET("/blessings/sent", GetSentBlessings)         // 查询自己发出的祝福
+		authGroup.GET("/blessings/received", GetReceivedBlessings) // 查询自己收到的祝福
 	}
 	r.Run(":8080")
 }
