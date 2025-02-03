@@ -38,7 +38,7 @@ func checkPassword(password, hash string) bool {
 func authMiddleware(c *gin.Context, db *gorm.DB) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少认证令牌"})
+		ResponseFAIL(c, http.StatusUnauthorized, "缺少认证令牌")
 		c.Abort()
 		return
 	}
@@ -51,14 +51,14 @@ func authMiddleware(c *gin.Context, db *gorm.DB) {
 	})
 
 	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "无效的令牌"})
+		ResponseFAIL(c, http.StatusUnauthorized, "无效的令牌")
 		c.Abort()
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "无效的令牌声明"})
+		ResponseFAIL(c, http.StatusUnauthorized, "无效的令牌声明")
 		c.Abort()
 		return
 	}
@@ -66,7 +66,7 @@ func authMiddleware(c *gin.Context, db *gorm.DB) {
 	userID := int(claims["user_id"].(float64))
 	var user User
 	if err := db.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
+		ResponseFAIL(c, http.StatusUnauthorized, "用户不存在")
 		c.Abort()
 		return
 	}

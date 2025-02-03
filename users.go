@@ -50,13 +50,13 @@ type UpdateProfileRequest struct {
 func registerHandler(c *gin.Context, db *gorm.DB) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ResponseFAIL(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	hashedPassword, err := hashPassword(req.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码处理失败"})
+		ResponseFAIL(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -66,48 +66,47 @@ func registerHandler(c *gin.Context, db *gorm.DB) {
 	}
 
 	if err := db.Create(&user).Error; err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err})
+		ResponseFAIL(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	c.JSON(http.StatusCreated, gin.H{
+	ResponseOK(c, gin.H{
 		"id":       user.ID,
 		"userName": user.UserName,
-	})
+	}, "注册成功")
 }
 
 // 登录处理函数
 func loginHandler(c *gin.Context, db *gorm.DB) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ResponseFAIL(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	var user User
 	if err := db.Where("user_name = ?", req.UserName).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "无效的凭证"})
+		ResponseFAIL(c, http.StatusUnauthorized, "无效的凭证")
 		return
 	}
 
 	if !checkPassword(req.Password, user.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "无效的凭证"})
+		ResponseFAIL(c, http.StatusUnauthorized, "无效的凭证")
 		return
 	}
 
 	token, err := generateToken(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "令牌生成失败"})
+		ResponseFAIL(c, http.StatusInternalServerError, "令牌生成失败")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	ResponseOK(c, gin.H{
 		"token": token,
 		"user": gin.H{
 			"id":       user.ID,
 			"userName": user.UserName,
 		},
-	})
+	}, "登录成功")
 }
 
 func updateProfileHandler(c *gin.Context, db *gorm.DB) {
@@ -115,7 +114,7 @@ func updateProfileHandler(c *gin.Context, db *gorm.DB) {
 
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ResponseFAIL(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -129,11 +128,10 @@ func updateProfileHandler(c *gin.Context, db *gorm.DB) {
 	}
 
 	if err := db.Model(&User{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
+		ResponseFAIL(c, http.StatusInternalServerError, "更新失败")
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "个人信息更新成功"})
+	ResponseOK(c, updates, "个人信息更新成功")
 }
 
 func getProfileHandler(c *gin.Context, db *gorm.DB) {
@@ -141,7 +139,7 @@ func getProfileHandler(c *gin.Context, db *gorm.DB) {
 
 	var user User
 	if err := db.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		ResponseFAIL(c, http.StatusNotFound, "用户不存在")
 		return
 	}
 
@@ -154,8 +152,7 @@ func getProfileHandler(c *gin.Context, db *gorm.DB) {
 		"status":    user.Status,
 		"birthday":  user.Birthday,
 	}
-
-	c.JSON(http.StatusOK, response)
+	ResponseOK(c, response, "获取成功")
 }
 
 // 删除账户处理函数
@@ -163,9 +160,8 @@ func deleteAccountHandler(c *gin.Context, db *gorm.DB) {
 	userID := c.MustGet("userID").(int)
 
 	if err := db.Delete(&User{}, userID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})
+		ResponseFAIL(c, http.StatusInternalServerError, "删除失败")
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "账户删除成功"})
+	ResponseOK(c, nil, "账户删除成功")
 }
