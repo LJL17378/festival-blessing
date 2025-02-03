@@ -14,6 +14,7 @@ import (
 
 // 消息结构体
 type Message struct {
+	FROM    int
 	To      int    `json:"to"`
 	Content string `json:"content"`
 }
@@ -58,7 +59,7 @@ func wsHandler(c *gin.Context) {
 		if err := json.Unmarshal(msgBytes, &msg); err != nil {
 			continue
 		}
-
+		msg.FROM = userID
 		handleIncomingMessage(userID, msg)
 	}
 }
