@@ -39,6 +39,7 @@ func main() {
 		authGroup.POST("/blessings", SendBlessings)                // 发送祝福
 		authGroup.GET("/blessings/sent", GetSentBlessings)         // 查询自己发出的祝福
 		authGroup.GET("/blessings/received", GetReceivedBlessings) // 查询自己收到的祝福
+		authGroup.GET("/ws", wsHandler)
 	}
 	r.Run(":8080")
 }
