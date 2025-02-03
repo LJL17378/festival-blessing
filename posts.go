@@ -158,7 +158,7 @@ func unlikePostHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	ResponseOK(c, nil, "点赞成功")
+	ResponseOK(c, nil, "取消点赞成功")
 }
 
 // 查询某人已点赞的帖子
