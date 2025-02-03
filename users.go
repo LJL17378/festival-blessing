@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -135,8 +136,7 @@ func updateProfileHandler(c *gin.Context, db *gorm.DB) {
 }
 
 func getProfileHandler(c *gin.Context, db *gorm.DB) {
-	userID := c.MustGet("userID").(int)
-
+	userID, _ := strconv.Atoi(c.Query("userID"))
 	var user User
 	if err := db.First(&user, userID).Error; err != nil {
 		ResponseFAIL(c, http.StatusNotFound, "用户不存在")
