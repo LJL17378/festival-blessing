@@ -28,6 +28,11 @@ func SendFriendRequest(c *gin.Context, db *gorm.DB) {
 		ResponseFAIL(c, http.StatusBadRequest, "Invalid input")
 		return
 	}
+	var existingRequest FriendRequest
+	if err := db.Where("from_id = ? and to_id = ? and accepted_status = 0", fromID, request.ToID).First(&existingRequest).Error; err == nil {
+		ResponseFAIL(c, http.StatusBadRequest, "你已经发送过请求了")
+		return
+	}
 	//创建好友请求
 	friendRequest := FriendRequest{FromID: fromID, ToID: request.ToID}
 	db.Create(&friendRequest)
