@@ -9,7 +9,7 @@ import (
 type Blessing struct {
 	ID         int       `gorm:"primary_key"`
 	SenderID   int       `gorm:"not null"`
-	ReceiverID int       `gorm:"not null"`
+	ReceiverID *int      `gorm:"default:null"`
 	Content    string    `gorm:"not null"`
 	Font       string    `gorm:"not null"`
 	PaperStyle string    `gorm:"not null"`
@@ -18,7 +18,7 @@ type Blessing struct {
 
 func SendBlessings(c *gin.Context) {
 	var req struct {
-		ReceiverID int    `json:"receiver_id"`
+		ReceiverID *int   `json:"receiver_id"`
 		Content    string `json:"content"`
 		Font       string `json:"font"`
 		PaperStyle string `json:"paper_style"`
@@ -34,7 +34,7 @@ func SendBlessings(c *gin.Context) {
 	//确保只能发给好友
 	var count int64
 	db.Table("friend_relationships").Where("(user_id = ? and friend_id = ?) or (user_id = ? and friend_id = ?)", senderID, req.ReceiverID, req.ReceiverID, senderID).Count(&count)
-	if count == 0 {
+	if count == 0 && req.ReceiverID != nil {
 		ResponseFAIL(c, http.StatusForbidden, "对方不是你的好友")
 		return
 	}
@@ -52,7 +52,11 @@ func SendBlessings(c *gin.Context) {
 		return
 	}
 
-	ResponseOK(c, gin.H{"blessings_sent": blessing}, "祝福发送成功")
+	if blessing.ReceiverID != nil {
+		ResponseOK(c, gin.H{"blessings_sent": blessing}, "祝福发送成功")
+	} else {
+		ResponseOK(c, gin.H{"blessing_sent": blessing}, "已将此祝福存储至草稿箱")
+	}
 }
 
 // 查询自己发送的祝福
