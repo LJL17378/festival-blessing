@@ -117,3 +117,67 @@ func GetReceivedBlessings(c *gin.Context) {
 		"received_blessings": blessings,
 	}, "查询成功")
 }
+
+func ShareBlessings(c *gin.Context) {
+	var req struct {
+		ReceiverID *int   `json:"receiver_id"`
+		Content    string `json:"content"`
+		Font       string `json:"font"`
+		PaperStyle string `json:"paper_style"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ResponseFAIL(c, http.StatusBadRequest, "Invalid request format")
+		return
+	}
+
+	senderID := c.GetInt("userID")
+
+	blessing := Blessing{
+		SenderID:   senderID,
+		ReceiverID: nil,
+		Content:    req.Content,
+		Font:       req.Font,
+		PaperStyle: req.PaperStyle,
+	}
+
+	if err := db.Create(&blessing).Error; err != nil {
+		ResponseFAIL(c, http.StatusInternalServerError, "分享祝福失败")
+		return
+	}
+
+	ResponseOK(c, gin.H{
+		"blessing_id": blessing.ID,
+	}, "您可以以此id分享祝福")
+}
+
+func ReceiveByLink(c *gin.Context) {
+	blessingID := c.Query("id")
+	userID := c.GetInt("userID")
+
+	var blessing Blessing
+	if err := db.First(&blessing, blessingID).Error; err != nil {
+		ResponseFAIL(c, http.StatusNotFound, "没有查询到这条祝福")
+	}
+
+	if blessing.ReceiverID == nil {
+		blessing.ReceiverID = &userID
+		if err := db.Save(&blessing).Error; err != nil {
+			ResponseFAIL(c, http.StatusInternalServerError, "接收祝福失败")
+			return
+		}
+	} else if *blessing.ReceiverID != userID {
+		ResponseFAIL(c, http.StatusForbidden, "您无权查看已发送给别人的祝福")
+		return
+	}
+
+	ResponseOK(c, gin.H{
+		"blessing_id": blessing.ID,
+		"sender_id":   blessing.SenderID,
+		"receiver_id": blessing.ReceiverID,
+		"content":     blessing.Content,
+		"font":        blessing.Font,
+		"paper_style": blessing.PaperStyle,
+		"created_at":  blessing.CreatedAt,
+	}, "成功获取祝福")
+}
