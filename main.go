@@ -1,13 +1,23 @@
 package main
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func main() {
 	db := InitDb()
 
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},                                       // 允许所有域名访问
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // 允许的方法
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // 允许的头部
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,           // 是否允许携带认证信息
+		MaxAge:           12 * time.Hour, // 缓存预检请求的时间
+	}))
 	r.Static("/avatar", "./avatar")
 
 	// 公共路由
