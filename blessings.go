@@ -64,6 +64,7 @@ func GetSentBlessings(c *gin.Context) {
 	userID := c.GetInt("userID")
 
 	var blessings []struct {
+		ID           int    `json:"id"`
 		ReceiverID   int    `json:"receiver_id"`
 		ReceiverName string `json:"receiver_name"`
 		Content      string `json:"content"`
@@ -72,7 +73,7 @@ func GetSentBlessings(c *gin.Context) {
 		Timestamp    string `json:"timestamp"`
 	}
 	err := db.Table("blessings").
-		Select("blessings.receiver_id, users.user_name as receiver_name, blessings.content, blessings.font, blessings.paper_style, blessings.created_at as timestamp").
+		Select("blessings.id, blessings.receiver_id, users.user_name as receiver_name, blessings.content, blessings.font, blessings.paper_style, blessings.created_at as timestamp").
 		Joins("JOIN users ON blessings.receiver_id = users.id").
 		Where("blessings.sender_id = ?", userID).
 		Order("blessings.created_at DESC").
@@ -83,8 +84,29 @@ func GetSentBlessings(c *gin.Context) {
 		return
 	}
 
+	var drafts []struct {
+		ID         int    `json:"id"`
+		ReceiverID *int   `json:"receiver_id"`
+		Content    string `json:"content"`
+		Font       string `json:"font"`
+		PaperStyle string `json:"paper_style"`
+		Timestamp  string `json:"timestamp"`
+	}
+
+	err = db.Table("blessings").
+		Select("blessings.id, blessings.receiver_id, blessings.content, blessings.font, blessings.paper_style, blessings.created_at as timestamp").
+		Where("(blessings.sender_id = ?) and (blessings.receiver_id is null)", userID).
+		Order("blessings.created_at DESC").
+		Scan(&drafts).Error
+
+	if err != nil {
+		ResponseFAIL(c, http.StatusInternalServerError, "无法获取草稿箱")
+		return
+	}
+
 	ResponseOK(c, gin.H{
 		"sent_blessings": blessings,
+		"草稿箱":            drafts,
 	}, "查询祝福成功")
 }
 
@@ -93,6 +115,7 @@ func GetReceivedBlessings(c *gin.Context) {
 	userID := c.GetInt("userID")
 
 	var blessings []struct {
+		ID         int    `json:"id"`
 		SenderID   uint   `json:"sender_id"`
 		SenderName string `json:"sender_name"`
 		Content    string `json:"content"`
@@ -102,7 +125,7 @@ func GetReceivedBlessings(c *gin.Context) {
 	}
 
 	err := db.Table("blessings").
-		Select("blessings.sender_id, users.user_name as sender_name, blessings.content, blessings.font, blessings.paper_style, blessings.created_at as timestamp").
+		Select("blessings.id, blessings.sender_id, users.user_name as sender_name, blessings.content, blessings.font, blessings.paper_style, blessings.created_at as timestamp").
 		Joins("JOIN users ON blessings.sender_id = users.id").
 		Where("blessings.receiver_id = ?", userID).
 		Order("blessings.created_at DESC").
